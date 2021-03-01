@@ -1,0 +1,63 @@
+clc
+clear all;
+close all;
+N = 512; % number of symbols
+Nb_s = 2; % number of bits per symbol
+Nb = N * Nb_s; % number of bits
+L = 32;
+
+lambda = 0.2;
+sigma = 1;
+
+p = exp( -lambda * (j - 1).');
+
+h = p .* ((2^-0.5) * (randn(L,1) + 1j * randn(L,1))) ./(norm(p));
+h(2) = h(1);
+h(4) = h(1);
+h(2) = h(1);6
+
+b = zeros(3 , 1);
+
+A = zeros(3 , L);
+for i = 1:26
+    A(i,A_indices(i)) = 1;
+end
+
+error_sum = 0;
+h_sum = 0;
+MSE_th_sum = 0;
+
+for index = 1:10000
+
+    bits = round(rand(Nb,1)); %random bits generation.
+    H = eye(N);
+
+    c_index = 2*bits(1:2:end) + bits(2:2:end) + 1;
+
+    C = 2^(-0.5) * [1+1j , 1-1j , -1+1j, -1-1j];
+
+    S = C(c_index); % symbol set
+    X = S.*H;
+
+    i = 1:N; j = 1:L;
+    temp1 = repmat( exp(2*pi * 1i * (i.' - 1) / 512),1,L);
+    temp2 = repmat(j,N,1);
+
+    F = temp1.^(temp2-1);
+
+    n = sigma * (2^-0.5) * (randn(N,1) + 1j * randn(N,1));
+
+    y = X * F * h_sparsity + n;
+    H = X*F;
+
+    h_est_sparcity = inv(H' * H) * H' * y - inv(H' * H) * A' * inv(A * inv(H' * H) * A') * A * inv(H' * H) * H' * y;
+
+    error_sum = error_sum + (h_est_sparcity - h_sparsity)' * (h_est_sparcity - h_sparsity);
+    h_sum = h_sum + h_est_sparcity;
+    MSE_th_sum = MSE_th_sum + trace( sigma^2 * (inv(H' * H) - inv(H' * H) * A' * inv( A * inv(H' * H) * A') * A * inv(H' * H)) );
+
+end
+
+average_error = error_sum/10000;
+h_avg = h_sum/10000;
+MSE_th = MSE_th_sum/10000;
